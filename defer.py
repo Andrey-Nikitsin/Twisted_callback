@@ -1,20 +1,19 @@
-from twisted.internet import reactor , threads
-from twisted.internet.defer import Deferred
+from twisted.internet import reactor, defer
 
 
-def SlowFunk():
-    print('slow')
+def callback_func_2(result):
     a = 1
-    while a < 100000000000:
+    while a < 10000000:
         a += 1
-    return a
+    return print(a)
 
+def do():
+    print('do')
+    d = defer.Deferred()
+    reactor.callLater(1, d.callback, 'result')
+    d.addCallback(callback_func_2)
+    return d
 
-def CreateDeffered():
-    defferad = threads.deferToThread(SlowFunk)
-    defferad.addCallback(print)
-    print('rabotaet')
-
-
-val = CreateDeffered()
+do()
+print('asdfas')
 reactor.run()
