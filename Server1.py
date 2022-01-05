@@ -1,60 +1,71 @@
-from twisted.internet import protocol, reactor, threads, endpoints
+from twisted.internet import protocol, reactor
 from twisted.internet.endpoints import TCP4ServerEndpoint
-from twisted.internet.defer import Deferred
 from twisted.protocols.basic import LineReceiver
-import socket
 import requests
 
 
-# URL = "https://loremflickr.com/320/240"
-#
-# def getFile(url):
-#     r = requests.get(url, allow_redirects=True)
-#     return r
-#
-# def WriteFile(response):
-#     with open('image.jpeg','wb') as file:
-#         file.write(response.content)
-#
-# WriteFile(getFile(URL))
 
+class Server1(LineReceiver):
+    def __init__(self):
+        self.schet = 0
+        self.number = 0
+        self.generator = Server1.gen(self, self.number)
+        self.response = None
 
-class Server1(protocol.Protocol):
+    URL = "https://loremflickr.com/320/240"
 
     def connectionMade(self):
-        self.transport.write(b'server connect\n')
-        self.transport.write(b'enter number of pictures:\n')
+        self.sendLine(b'server connect\nenter number of pictures:\n')
 
-    def dataReceived(self, data):
-        data = data.decode("UTF-8")
+    def getFile(url):
+        r = requests.get(url, allow_redirects=True)
+        return r
 
-        URL = "https://loremflickr.com/320/240"
+    def SendFile(self):
+        print('send name')
+        self.response = Server1.getFile(Server1.URL)
+        file_name = self.response.url.split('/')[-1]
+        file_name = file_name.encode("UTF-8")
+        self.sendLine(file_name)
 
-        def getFile(url):
-            r = requests.get(url, allow_redirects=True)
-            return r
+    def SendData(self):
+        print('send data')
+        self.sendLine(self.response.content)
 
-        def FileName(response):
-            print('send')
-            file_name = response.url.split('/')[-1]
-            file_name = file_name.encode("UTF-8")
-            self.transport.write(file_name)
-
-        def sendFile(data):
-            a=0
-            while a < int(data):
-                FileName(getFile(URL))
-                a+=1
-
+    def gen(self, data):
         print(data)
-        if data == 'CLIENT CONNECT':
-            pass
-        else:
-            if data.isdigit() == True:
-                self.transport.write(b'ok')
-                sendFile(data)
+        a = 0
+        while a < data*2:
+            a+=1
+            if a%2 !=0:
+                yield Server1.SendFile(self)
             else:
-                self.transport.write(b'enter only numbers\n')
+                yield Server1.SendData(self)
+
+    def lineReceived(self, line):
+        if self.number !=0:
+            try:
+                next(self.generator)
+            except StopIteration:
+                self.connectionLost()
+        else:
+            def funk(data):
+                self.number = data
+                self.generator = Server1.gen(self, self.number)
+            def hendlerFunk(line):
+                if self.schet == 0:
+                    line = line.decode("UTF-8")
+                    print(line)
+                    self.schet+=1
+                else:
+                    line = line.decode("UTF-8")
+                    if line.isdigit() ==True:
+                        self.number +=int(line)
+                        funk(self.number)
+                    else:
+                        self.sendLine(b'enter only a number\n')
+
+            hendlerFunk(line)
 
 class FactoryServer(protocol.ServerFactory):
 

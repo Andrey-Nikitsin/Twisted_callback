@@ -1,7 +1,5 @@
 from twisted.internet import protocol, reactor, threads
-from twisted.internet.defer import Deferred
 from twisted.protocols.basic import LineReceiver
-
 
 
 class TwistServer(LineReceiver):

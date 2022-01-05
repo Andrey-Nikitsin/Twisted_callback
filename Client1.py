@@ -1,53 +1,53 @@
-from twisted.internet import reactor
-from twisted.internet.protocol import Protocol, ClientFactory
+from twisted.internet.protocol import ClientFactory
 from twisted.internet.endpoints import TCP4ClientEndpoint
+from twisted.internet import reactor
+from twisted.protocols.basic import LineReceiver
 
 
-def gen(number):
-    print('run gen')
-    numbers = int(number)
-    a = 0
-    while a < numbers:
-        if a == 0:
-            a+=1
-            yield 0
-        else:
-            a += 1
-            yield 1
-
-
-class Client1(Protocol):
+class Client1(LineReceiver):
     def __init__(self):
         self.number = 0
         self.connect = 0
+        self.nameFile = ''
+        self.chet = 0
 
-    # def connectionMade(self):
-    #     pass
-    #     # self.transport.write(b'CLIENT CONNECT')
+    def connectionMade(self):
+        self.sendLine(b'CLIENT CONNECT\n')
 
+    def saveFile(self, name):
+        with open(name, 'wb') as file:
+            return file
 
-    def dataReceived(self, data):
-        data = data.decode("UTF-8")
-        def FirstConnect(data):
-            print(data)
-            answer = input()
-            self.number = answer
-            answer = answer.encode("UTF-8")
-            self.transport.write(answer)
+    def saveData(self, file, data):
+        file.write(data)
+
+    def lineReceived(self, line):
+        def ConnectServer(line):
+            line = line.decode("UTF-8")
+            print(line)
+            data = input('введите количество картинок: ')
+            data = data.encode("UTF-8")
+            self.sendLine(data)
+            self.sendLine(b'ready')
             self.connect+=1
+
+        def saveFile(name, data):
+            with open(name, 'wb') as file:
+                file.write(data)
+
         if self.connect == 0:
-            FirstConnect(data)
-        def CreateFile(data):
-            with open(data, 'wb') as file:
-                return file
-        print(data)
-        if data == "ok":
-            print(data)
-            gen(self.number)
-
-        # if gen(self.number) == 1:
-        #     CreateFile(data)
-
+            ConnectServer(line)
+        else:
+            try:
+                line = line.decode("UTF-8")
+                self.nameFile = line
+                self.sendLine(b'')
+                self.sendLine(b'')
+            except UnicodeError:
+                print('error')
+                saveFile(self.nameFile, line)
+                self.sendLine(b'')
+                self.sendLine(b'')
 
 
 class ClientFactory1(ClientFactory):

@@ -19,13 +19,12 @@
 # reactor.run()
 
 
-numberFile = 'andrey'
+def funk(data):
 
+    for i in data:
+        yield print(i)
 
-def sortingData(numbers):
-    for elem  in numbers:
-        yield elem
-
-
-a = sortingData(numberFile)
-print(next(a))
+g= funk('andrey')
+print(next(g))
+print('asdf')
+print(next(g))
